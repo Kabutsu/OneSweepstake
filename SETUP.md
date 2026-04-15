@@ -69,7 +69,7 @@ Create a `.env.local` file in the project root:
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key-here
 
 # Database Connection String
 DATABASE_URL=postgresql://postgres:[your-db-password]@db.[your-project-ref].supabase.co:5432/postgres
