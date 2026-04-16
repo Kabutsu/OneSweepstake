@@ -13,19 +13,20 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "@supabase/supabase-js": "^2.39.0",
     "@supabase/ssr": "^0.1.0",
+    "@supabase/supabase-js": "^2.39.0",
     "drizzle-orm": "^0.29.0",
-    "postgres": "^3.4.0"
+    "next": "^14.2.0",
+    "postgres": "^3.4.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.0",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.20.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.0",
