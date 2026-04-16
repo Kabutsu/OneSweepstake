@@ -1,41 +1,62 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { env } from "@/lib/env";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const error = searchParams.get("error");
-  const errorDescription = searchParams.get("error_description");
-  const next = searchParams.get("next") ?? "/";
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const error = requestUrl.searchParams.get("error");
+  const errorDescription = requestUrl.searchParams.get("error_description");
 
-  // Handle errors from Supabase
+  console.log("Callback URL:", requestUrl.href);
+
   if (error) {
-    console.error("Auth callback error:", { error, errorDescription });
+    console.error("Auth error:", error, errorDescription);
     return NextResponse.redirect(
-      `${origin}/auth/auth-code-error?error=${error}&description=${encodeURIComponent(errorDescription || "")}`
+      `${requestUrl.origin}/auth/auth-code-error?error=${error}&description=${encodeURIComponent(errorDescription || "")}`
     );
   }
 
   if (code) {
-    const supabase = await createClient();
+    const cookieStore = await cookies();
+
+    const supabase = createServerClient(
+      env.supabase.url,
+      env.supabase.publishableKey,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            try {
+              cookieStore.set({ name, value, ...options });
+            } catch (error) {
+              // Cookie setting can fail in server components
+            }
+          },
+          remove(name: string, options: CookieOptions) {
+            try {
+              cookieStore.set({ name, value: "", ...options });
+            } catch (error) {
+              // Cookie removal can fail in server components
+            }
+          },
+        },
+      }
+    );
+
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!exchangeError) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
-    } else {
-      console.error("Session exchange error:", exchangeError);
+      console.log("✓ Successfully exchanged code for session");
+      return NextResponse.redirect(`${requestUrl.origin}/`);
     }
+
+    console.error("✗ Code exchange failed:", exchangeError.message);
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // Redirect to home anyway - session might exist from cookies
+  return NextResponse.redirect(`${requestUrl.origin}/`);
 }
