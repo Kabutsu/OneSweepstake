@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { env } from "@/lib/env";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -21,8 +22,8 @@ export async function GET(request: Request) {
     const cookieStore = await cookies();
 
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      env.supabase.url,
+      env.supabase.publishableKey,
       {
         cookies: {
           get(name: string) {
