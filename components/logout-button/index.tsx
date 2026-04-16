@@ -1,10 +1,8 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-
 export default function LogoutButton() {
   const handleLogout = () => {
-    redirect('/auth/signout');
+    window.location.href = '/auth/signout';
   };
 
   return (
