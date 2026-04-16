@@ -16,6 +16,7 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
     "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.2",
     "next": "^15.1.0",
     "postgres": "^3.4.0",
     "react": "^19.0.0",

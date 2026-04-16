@@ -6,7 +6,10 @@ export function validateEnv() {
   const required = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
+    SITE_PASSWORD: process.env.SITE_PASSWORD,
+    JWT_SECRET: process.env.JWT_SECRET,
   };
 
   const missing = Object.entries(required)
@@ -27,8 +30,13 @@ export const env = {
   supabase: {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
   },
   database: {
     url: process.env.DATABASE_URL!,
+  },
+  auth: {
+    sitePassword: process.env.SITE_PASSWORD!,
+    jwtSecret: process.env.JWT_SECRET!,
   },
 } as const;
