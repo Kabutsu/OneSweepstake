@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     if (existingDisplayName) {
       return NextResponse.json(
-        { error: "This display name is already taken. Please choose another." },
+        { error: `The display name "${trimmedName}" is already taken. Please choose another.` },
         { status: 400 }
       );
     }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       if (error.code === '23505') { // PostgreSQL unique violation error code
         if (error.message.includes('display_name')) {
           return NextResponse.json(
-            { error: "This display name is already taken. Please choose another." },
+            { error: `The display name "${trimmedName}" is already taken. Please choose another.` },
             { status: 400 }
           );
         }
