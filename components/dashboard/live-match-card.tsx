@@ -30,7 +30,7 @@ export default function LiveMatchCard({ homeTeam, awayTeam, score, minute }: Liv
           </div>
 
           <div className="px-8 text-center flex flex-col items-center">
-            <div className="text-sm opacity-90 mb-1 pl-1">{minute}'</div>
+            <div className="text-sm opacity-90 mb-1 pl-1">{minute}&#39;</div>
             <div className="w-px h-12 bg-white/30" />
           </div>
 
