@@ -72,7 +72,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key-here
 
 # Database Connection String
-DATABASE_URL=postgresql://postgres:[your-db-password]@db.[your-project-ref].supabase.co:5432/postgres
+POSTGRES_URL=postgresql://postgres:[your-db-password]@db.[your-project-ref].supabase.co:5432/postgres
 ```
 
 Replace:
@@ -162,7 +162,7 @@ You should be redirected to the sign-in page.
 
 ### Database connection errors
 
-- Verify DATABASE_URL is correct
+- Verify POSTGRES_URL is correct
 - Check database password is correct
 - Ensure database is accessible (Supabase projects pause after inactivity on free tier)
 

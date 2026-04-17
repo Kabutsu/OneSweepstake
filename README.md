@@ -53,7 +53,7 @@ Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key
-DATABASE_URL=postgresql://postgres:[your-password]@db.[your-project-ref].supabase.co:5432/postgres
+POSTGRES_URL=postgresql://postgres:[your-password]@db.[your-project-ref].supabase.co:5432/postgres
 ```
 
 5. **Run database migrations**
