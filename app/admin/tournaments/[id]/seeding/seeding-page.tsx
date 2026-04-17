@@ -258,7 +258,7 @@ export default function SeedingPage({ tournamentId, tournamentName, apiId }: See
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 bg-gradient-to-r from-purple to-magenta text-white font-display font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-gradient-to-r from-purple to-magenta text-white font-display rounded-xl hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : "Save Seeding"}
           </button>
