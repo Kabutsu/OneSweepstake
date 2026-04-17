@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import AuthContainer from "@/components/auth/auth-container";
 import PasswordStep from "@/components/auth/password-step";
@@ -48,6 +48,16 @@ export default function EnterPageClient({ initialStep }: EnterPageClientProps) {
     }
   }, [searchParams, step, setPassword]);
 
+  const getTransitionDirection = useCallback((
+    from: typeof step,
+    to: typeof step
+  ): "forward" | "backward" => {
+    const stepOrder = ["password", "email", "signup"];
+    const fromIndex = stepOrder.indexOf(from);
+    const toIndex = stepOrder.indexOf(to);
+    return toIndex > fromIndex ? "forward" : "backward";
+  }, [step]);
+
   // Animate step transitions
   useEffect(() => {
     if (step === previousStepRef.current) return;
@@ -56,35 +66,9 @@ export default function EnterPageClient({ initialStep }: EnterPageClientProps) {
     if (!container) return;
 
     const direction = getTransitionDirection(previousStepRef.current, step);
-    const newContent = renderStepContent(step);
-    
-    if (newContent) {
-      const tempContainer = document.createElement("div");
-      tempContainer.innerHTML = newContent;
-      const newElement = tempContainer.firstElementChild as HTMLElement;
-      
-      transitionTo(newElement, direction);
-    }
 
     previousStepRef.current = step;
-  }, [step, containerRef, transitionTo]);
-
-  const getTransitionDirection = (
-    from: typeof step,
-    to: typeof step
-  ): "forward" | "backward" => {
-    const stepOrder = ["password", "email", "signup"];
-    const fromIndex = stepOrder.indexOf(from);
-    const toIndex = stepOrder.indexOf(to);
-    return toIndex > fromIndex ? "forward" : "backward";
-  };
-
-  const renderStepContent = (currentStep: typeof step): string | null => {
-    // This is a workaround for GSAP transitions - in a production app,
-    // you'd want a more elegant solution. For now, we'll skip the transition
-    // and just render directly.
-    return null;
-  };
+  }, [step, containerRef, transitionTo, getTransitionDirection]);
 
   const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
 
