@@ -22,6 +22,7 @@ export const tournaments = pgTable("tournaments", {
   teamCount: integer("team_count").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   logo: text("logo"),
+  seedingConfig: jsonb("seeding_config"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -10,6 +10,7 @@ export function validateEnv() {
     POSTGRES_URL: process.env.POSTGRES_URL,
     SITE_PASSWORD: process.env.SITE_PASSWORD,
     JWT_SECRET: process.env.JWT_SECRET,
+    FOOTBALL_DATA_API_KEY: process.env.FOOTBALL_DATA_API_KEY,
   };
 
   const missing = Object.entries(required)
@@ -38,5 +39,8 @@ export const env = {
   auth: {
     sitePassword: process.env.SITE_PASSWORD!,
     jwtSecret: process.env.JWT_SECRET!,
+  },
+  api: {
+    footballDataApiKey: process.env.FOOTBALL_DATA_API_KEY!,
   },
 } as const;
