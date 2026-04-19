@@ -6,7 +6,7 @@ import { jwtVerify, SignJWT } from "jose";
 const JWT_SECRET = new TextEncoder().encode(env.auth.jwtSecret);
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/auth/enter", "/auth/signout"];
+const PUBLIC_ROUTES = ["/auth/enter", "/auth/signout", "/auth/callback", "/auth/complete-profile"];
 
 // Check if the route is an API route
 function isApiRoute(pathname: string): boolean {
@@ -31,18 +31,6 @@ function shouldStoreRedirect(pathname: string): boolean {
   if (pathname.startsWith("/_next/")) return false;
   
   return true;
-}
-
-/**
- * Verify password verified cookie
- */
-async function verifyPasswordCookie(token: string): Promise<boolean> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.passwordVerified === true;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -105,7 +93,28 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Step 1: Check if route is public
+  // Step 1: Handle password parameter in URL (optional override)
+  const passwordParam = searchParams.get("password");
+  if (passwordParam && passwordParam === env.auth.sitePassword) {
+    // Set password verified cookie and redirect to clean URL
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.search = "";
+    
+    const response = NextResponse.redirect(redirectUrl);
+    
+    const passwordToken = await createPasswordToken();
+    response.cookies.set("site_password_verified", passwordToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 24 * 60 * 60, // 60 days
+    });
+    
+    return response;
+  }
+
+  // Step 2: Check if route is public
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     // If user is already logged in and tries to access /auth/enter, redirect to home
     if (pathname.startsWith("/auth/enter") && user) {
@@ -118,69 +127,12 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Step 2: If user has valid Supabase session, allow through
+  // Step 3: If user has valid Supabase session, allow through
   if (user) {
     return supabaseResponse;
   }
 
-  // Step 3: Check for password parameter in URL
-  const passwordParam = searchParams.get("password");
-  if (passwordParam) {
-    // Verify password
-    if (passwordParam === env.auth.sitePassword) {
-      // Set password verified cookie and redirect to clean URL
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.search = "";
-      
-      const response = NextResponse.redirect(redirectUrl);
-      
-      const passwordToken = await createPasswordToken();
-      response.cookies.set("site_password_verified", passwordToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 24 * 60 * 60, // 60 days
-      });
-      
-      return response;
-    }
-    // If password is wrong, continue to redirect to /auth/enter below
-  }
-
-  // Step 4: Check for password verified cookie
-  const passwordCookie = request.cookies.get("site_password_verified")?.value;
-  const hasPasswordCookie = passwordCookie ? await verifyPasswordCookie(passwordCookie) : false;
-
-  if (hasPasswordCookie && pathname === "/auth/enter") {
-    // Has password, accessing auth page - allow (they're completing login)
-    return supabaseResponse;
-  }
-
-  if (!hasPasswordCookie) {
-    // No password cookie - redirect to /auth/enter with destination stored
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/auth/enter";
-    redirectUrl.search = "";
-
-    const response = NextResponse.redirect(redirectUrl);
-
-    // Store original destination if valid
-    if (shouldStoreRedirect(pathname)) {
-      const redirectToken = await createRedirectToken(pathname);
-      response.cookies.set("redirect_destination", redirectToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60, // 1 hour
-      });
-    }
-
-    return response;
-  }
-
-  // Step 5: Has password but no session, not on /auth/enter - redirect there
+  // Step 4: No session - redirect to /auth/enter with destination stored
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = "/auth/enter";
   redirectUrl.search = "";
