@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AuthContainer from "@/components/auth/auth-container";
 
-function AuthCallbackContent() {
+export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -107,26 +107,5 @@ function AuthCallbackContent() {
         </p>
       </div>
     </AuthContainer>
-  );
-}
-
-export default function AuthCallbackPage() {
-  return (
-    <Suspense
-      fallback={
-        <AuthContainer loading={true}>
-          <div className="text-center">
-            <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white tracking-wide">
-              Verifying...
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-4">
-              Please wait while we log you in
-            </p>
-          </div>
-        </AuthContainer>
-      }
-    >
-      <AuthCallbackContent />
-    </Suspense>
   );
 }
