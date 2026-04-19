@@ -55,11 +55,11 @@ export default function Sidebar({
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-              {user.avatar}
+              {user.avatarUrl ? <img src={user.avatarUrl} alt={user.displayName || "User"} className="w-10 h-10 rounded-full" /> : user.displayName?.[0]}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                {user.name}
+                {user.displayName}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 {sweepstakes.length} sweepstakes

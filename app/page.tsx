@@ -1,6 +1,9 @@
+import { Suspense } from 'react';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createCaller } from "@/lib/trpc/server";
 import DashboardPage from "@/components/dashboard/dashboard-page";
+import LoadingState from "@/components/dashboard/loading-state";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -10,5 +13,12 @@ export default async function Home() {
     redirect("/auth/enter");
   }
 
-  return <DashboardPage />;
+  const trpc = await createCaller();
+  const { user: userData} = await trpc.user.getUser({ id: user.id });
+
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <DashboardPage user={userData} />
+    </Suspense>
+  );
 }
