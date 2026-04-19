@@ -124,7 +124,6 @@ export default function CompleteProfilePage() {
           maxLength={50}
           disabled={loading}
           autoFocus
-          error={error}
           helperText={
             checkingName
               ? "Checking availability..."

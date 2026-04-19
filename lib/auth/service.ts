@@ -275,7 +275,7 @@ export class AuthService {
       return {
         type: "instant-auth",
         needsProfile: !userExists,
-        redirectTo,
+        redirectTo: redirectTo ?? undefined,
         sessionToken: token, // Include token for client to use
       };
     } catch (error) {

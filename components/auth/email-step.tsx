@@ -48,18 +48,15 @@ export default function EmailStep({
             type="button"
             variant="secondary"
             onClick={onChangeEmail}
-            disabled={resendDisabledSeconds > 0}
             className="flex-1"
           >
-            {resendDisabledSeconds > 0
-              ? `Wait ${resendDisabledSeconds}s`
-              : "Change Email"}
+            Change Email
           </Button>
           <Button
             type="button"
-            variant="secondary"
+            variant={resendDisabledSeconds > 0 ? "secondary" : "primary"}
             onClick={onResend}
-            disabled={resendDisabledSeconds > 0}
+            disabled={resendDisabledSeconds > 0 || loading}
             className="flex-1"
           >
             {resendDisabledSeconds > 0

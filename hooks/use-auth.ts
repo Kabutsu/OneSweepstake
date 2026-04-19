@@ -44,8 +44,8 @@ export function useAuth(): UseAuthResult {
   }, [resendDisabledSeconds]);
 
   const handleEmailSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    async (e?: React.FormEvent) => {
+      e?.preventDefault();
 
       const validation = validateEmail(email);
       if (!validation.isValid) {
@@ -112,12 +112,10 @@ export function useAuth(): UseAuthResult {
 
   const handleResend = useCallback(() => {
     if (resendDisabledSeconds > 0) return;
-    setMagicLinkSent(false);
-    // Will trigger re-submission when user clicks continue again
-  }, [resendDisabledSeconds]);
+    handleEmailSubmit();
+  }, [resendDisabledSeconds, handleEmailSubmit]);
 
   const handleChangeEmail = useCallback(() => {
-    if (resendDisabledSeconds > 0) return;
     setMagicLinkSent(false);
     setEmail("");
   }, [resendDisabledSeconds]);
