@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Outfit } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { TRPCProvider } from "@/lib/trpc/provider";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -32,9 +33,11 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={`${bebasNeue.variable} ${outfit.variable} font-body antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
+        <TRPCProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
+        </TRPCProvider>
       </body>
     </html>
   );

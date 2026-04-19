@@ -9,7 +9,6 @@ const JWT_SECRET = new TextEncoder().encode(env.auth.jwtSecret);
 export const COOKIE_NAMES = {
   PASSWORD_VERIFIED: "site_password_verified",
   REDIRECT_DESTINATION: "redirect_destination",
-  PASSWORD_ATTEMPTS: "password_attempts",
 } as const;
 
 // Cookie configuration
@@ -53,7 +52,7 @@ export async function verifyPasswordVerifiedToken(
 /**
  * Create a signed JWT for storing redirect destination
  */
-export async function createRedirectToken(destination: string): Promise<string> {
+async function createRedirectToken(destination: string): Promise<string> {
   const token = await new SignJWT({ destination })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("1h") // Short expiry for redirect
@@ -66,49 +65,12 @@ export async function createRedirectToken(destination: string): Promise<string> 
 /**
  * Verify and extract redirect destination
  */
-export async function verifyRedirectToken(
+async function verifyRedirectToken(
   token: string
 ): Promise<string | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return typeof payload.destination === "string" ? payload.destination : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Create a signed JWT for password attempt tracking
- */
-export async function createAttemptsToken(
-  attempts: number,
-  lockedUntil?: number
-): Promise<string> {
-  const token = await new SignJWT({ attempts, lockedUntil })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("1h") // Reset after 1 hour
-    .setIssuedAt()
-    .sign(JWT_SECRET);
-
-  return token;
-}
-
-/**
- * Verify and extract attempt data
- */
-export async function verifyAttemptsToken(token: string): Promise<{
-  attempts: number;
-  lockedUntil?: number;
-} | null> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return {
-      attempts: typeof payload.attempts === "number" ? payload.attempts : 0,
-      lockedUntil:
-        typeof payload.lockedUntil === "number"
-          ? payload.lockedUntil
-          : undefined,
-    };
   } catch {
     return null;
   }
@@ -167,49 +129,10 @@ export async function getAndClearRedirectCookie(): Promise<string | null> {
 }
 
 /**
- * Set password attempts cookie
- */
-export async function setAttemptsCookie(
-  attempts: number,
-  lockedUntil?: number
-): Promise<void> {
-  const cookieStore = await cookies();
-  const token = await createAttemptsToken(attempts, lockedUntil);
-
-  cookieStore.set(COOKIE_NAMES.PASSWORD_ATTEMPTS, token, {
-    ...COOKIE_CONFIG,
-    maxAge: 60 * 60, // 1 hour
-  });
-}
-
-/**
- * Get password attempts data
- */
-export async function getAttemptsCookie(): Promise<{
-  attempts: number;
-  lockedUntil?: number;
-} | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAMES.PASSWORD_ATTEMPTS)?.value;
-
-  if (!token) return null;
-  return await verifyAttemptsToken(token);
-}
-
-/**
- * Clear password attempts cookie
- */
-export async function clearAttemptsCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAMES.PASSWORD_ATTEMPTS);
-}
-
-/**
  * Clear all auth cookies (for logout)
  */
 export async function clearAllAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAMES.PASSWORD_VERIFIED);
   cookieStore.delete(COOKIE_NAMES.REDIRECT_DESTINATION);
-  cookieStore.delete(COOKIE_NAMES.PASSWORD_ATTEMPTS);
 }

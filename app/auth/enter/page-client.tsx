@@ -1,76 +1,71 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import AuthContainer from "@/components/auth/auth-container";
-import PasswordStep from "@/components/auth/password-step";
 import EmailStep from "@/components/auth/email-step";
-import SignupStep from "@/components/auth/signup-step";
 import ThemeToggle from "@/components/theme-toggle";
-import { useAuthFlow } from "@/hooks/use-auth-flow";
-import { useStepTransition } from "@/hooks/use-step-transition";
+import { useAuth } from "@/hooks/use-auth";
 
-export interface EnterPageClientProps {
-  initialStep: "password" | "email";
-}
-
-export default function EnterPageClient({ initialStep }: EnterPageClientProps) {
-  const searchParams = useSearchParams();
+export default function EnterPageClient() {
+  const router = useRouter();
+  const supabase = createClient();
+  
   const {
     step,
-    password,
     email,
-    displayName,
     loading,
     error,
-    lockedUntil,
-    passwordError,
-    emailError,
-    displayNameError,
-    setPassword,
+    magicLinkSent,
+    resendDisabledSeconds,
     setEmail,
-    setDisplayName,
-    handlePasswordSubmit,
     handleEmailSubmit,
-    handleSignupSubmit,
-  } = useAuthFlow(initialStep);
+    handleResend,
+    handleChangeEmail,
+  } = useAuth();
 
-  const { containerRef, transitionTo } = useStepTransition();
-  const previousStepRef = useRef(step);
-
-  // Handle URL password parameter
+  // Redirect to complete-profile when step changes to signup
   useEffect(() => {
-    const urlPassword = searchParams.get("password");
-    if (urlPassword && step === "password") {
-      setPassword(urlPassword);
-      // Clear URL parameter after reading
-      window.history.replaceState({}, "", window.location.pathname);
+    if (step === "signup") {
+      router.push("/auth/complete-profile");
     }
-  }, [searchParams, step, setPassword]);
+  }, [step, router]);
 
-  const getTransitionDirection = useCallback((
-    from: typeof step,
-    to: typeof step
-  ): "forward" | "backward" => {
-    const stepOrder = ["password", "email", "signup"];
-    const fromIndex = stepOrder.indexOf(from);
-    const toIndex = stepOrder.indexOf(to);
-    return toIndex > fromIndex ? "forward" : "backward";
-  }, [step]);
-
-  // Animate step transitions
+  // Handle case where user lands here with auth tokens in hash (from magic link)
   useEffect(() => {
-    if (step === previousStepRef.current) return;
+    async function checkAuthFromHash() {
+      // Check if there's a hash fragment (magic link tokens)
+      if (!window.location.hash) return;
 
-    const container = containerRef.current;
-    if (!container) return;
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-    const direction = getTransitionDirection(previousStepRef.current, step);
+        if (user) {
+          // User is authenticated - check if they have a profile in DB
+          const { data: dbUser } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', user.id)
+            .single();
 
-    previousStepRef.current = step;
-  }, [step, containerRef, transitionTo, getTransitionDirection]);
+          if (dbUser) {
+            // Existing user - redirect to home (getRedirect happens server-side)
+            router.push("/");
+          } else {
+            // New user - go to profile completion
+            router.push("/auth/complete-profile");
+          }
+        }
+      } catch (err) {
+        console.error("Error handling auth from hash:", err);
+      }
+    }
 
-  const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
+    checkAuthFromHash();
+  }, [router, supabase]);
 
   return (
     <>
@@ -80,36 +75,17 @@ export default function EnterPageClient({ initialStep }: EnterPageClientProps) {
       </div>
 
       <AuthContainer error={error} loading={loading}>
-        <div ref={containerRef}>
-          {step === "password" && (
-            <PasswordStep
-              password={password}
-              setPassword={setPassword}
-              onSubmit={handlePasswordSubmit}
-              loading={loading}
-              disabled={isLocked}
-              error={passwordError}
-            />
-          )}
-          {step === "email" && (
-            <EmailStep
-              email={email}
-              setEmail={setEmail}
-              onSubmit={handleEmailSubmit}
-              loading={loading}
-              error={emailError}
-            />
-          )}
-          {step === "signup" && (
-            <SignupStep
-              displayName={displayName}
-              setDisplayName={setDisplayName}
-              onSubmit={handleSignupSubmit}
-              loading={loading}
-              error={displayNameError}
-            />
-          )}
-        </div>
+        <EmailStep
+          email={email}
+          setEmail={setEmail}
+          onSubmit={handleEmailSubmit}
+          loading={loading}
+          error={error || undefined}
+          magicLinkSent={magicLinkSent}
+          onResend={handleResend}
+          onChangeEmail={handleChangeEmail}
+          resendDisabledSeconds={resendDisabledSeconds}
+        />
       </AuthContainer>
     </>
   );
