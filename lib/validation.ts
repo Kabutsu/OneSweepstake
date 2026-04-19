@@ -41,14 +41,3 @@ export function validateDisplayName(displayName: string): ValidationResult {
 
   return { isValid: true };
 }
-
-/**
- * Validate password (non-empty check for site password)
- */
-export function validatePassword(password: string): ValidationResult {
-  if (!password) {
-    return { isValid: false, error: "Password is required" };
-  }
-
-  return { isValid: true };
-}

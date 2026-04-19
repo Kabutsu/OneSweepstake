@@ -1,133 +1,167 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { validateEmail } from "@/lib/validation";
+import { trpc } from "@/lib/trpc/client";
+import { createClient } from "@/lib/supabase/client";
+
+export type Step = "email" | "signup";
 
 export interface UseAuthResult {
-  // State
+  step: Step;
   email: string;
+  displayName: string;
   loading: boolean;
   error: string | null;
   magicLinkSent: boolean;
   resendDisabledSeconds: number;
-
-  // Actions
+  emailError?: string;
+  displayNameError?: string;
   setEmail: (value: string) => void;
-  handleEmailSubmit: (e: React.FormEvent) => Promise<void>;
+  setDisplayName: (value: string) => void;
+  handleEmailSubmit: (e?: React.FormEvent) => Promise<void>;
+  handleSignupSubmit: (e: React.FormEvent) => Promise<void>;
   handleResend: () => void;
   handleChangeEmail: () => void;
 }
 
-/**
- * Simplified auth hook for email-based authentication
- * Supports both instant auth (password-verified) and magic link
- */
-export function useAuth(): UseAuthResult {
+export function useAuth(initialStep: Step = "email"): UseAuthResult {
+  const [step, setStep] = useState<Step>(initialStep);
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [resendDisabledSeconds, setResendDisabledSeconds] = useState(0);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [displayNameTouched, setDisplayNameTouched] = useState(false);
+  const [emailError, setEmailError] = useState<string>();
+  const [displayNameError, setDisplayNameError] = useState<string>();
 
   const router = useRouter();
+  const supabase = createClient();
 
-  // Countdown timer for resend button
+  const authenticateEmail = trpc.auth.authenticateEmail.useMutation();
+  const completeProfile = trpc.auth.completeProfile.useMutation();
+
   useEffect(() => {
     if (resendDisabledSeconds <= 0) return;
-
     const interval = setInterval(() => {
       setResendDisabledSeconds((prev) => Math.max(0, prev - 1));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [resendDisabledSeconds]);
 
-  const handleEmailSubmit = useCallback(
-    async (e?: React.FormEvent) => {
-      e?.preventDefault();
-
-      const validation = validateEmail(email);
-      if (!validation.isValid) {
-        setError(validation.error || "Invalid email");
-        return;
+  useEffect(() => {
+    if (emailTouched) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email) {
+        setEmailError("Email is required");
+      } else if (!emailRegex.test(email)) {
+        setEmailError("Please enter a valid email address");
+      } else {
+        setEmailError(undefined);
       }
+    }
+  }, [email, emailTouched]);
 
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    if (displayNameTouched) {
+      if (!displayName.trim()) {
+        setDisplayNameError("Display name is required");
+      } else if (displayName.trim().length > 50) {
+        setDisplayNameError("Display name must be 50 characters or less");
+      } else {
+        setDisplayNameError(undefined);
+      }
+    }
+  }, [displayName, displayNameTouched]);
 
-      try {
-        const response = await fetch("/api/auth/email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
+  const handleEmailSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setEmailTouched(true);
 
-        const data = await response.json();
+    if (emailError || !email) {
+      return;
+    }
 
-        if (response.ok) {
-          if (data.type === "instant-auth") {
-            // Instant authentication (password-verified)
-            // Establish session using the token
-            if (data.sessionToken) {
-              const supabase = (await import("@/lib/supabase/client")).createClient();
-              const { error: verifyError } = await supabase.auth.verifyOtp({
-                token_hash: data.sessionToken,
-                type: "magiclink",
-              });
-              
-              if (verifyError) {
-                console.error("Session establishment error:", verifyError);
-                setError("Failed to establish session. Please try again.");
-                setLoading(false);
-                return;
-              }
-            }
-            
-            if (data.needsProfile) {
-              // New user - navigate to profile completion
-              router.push("/auth/complete-profile");
-            } else {
-              // Existing user - redirect to destination
-              router.push(data.redirectTo || "/");
-            }
-          } else if (data.type === "magic-link-sent") {
-            // Magic link sent - show confirmation
-            setMagicLinkSent(true);
-            setResendDisabledSeconds(60); // 1 minute cooldown
-            setLoading(false);
+    setError(null);
+
+    try {
+      const result = await authenticateEmail.mutateAsync({ email });
+
+      if (result.type === "instant-auth") {
+        if (result.sessionToken) {
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: result.sessionToken,
+            type: "magiclink",
+          });
+
+          if (verifyError) {
+            console.error("Session establishment error:", verifyError);
+            setError("Failed to establish session. Please try again.");
+            return;
           }
-        } else {
-          setError(data.error || "An error occurred");
-          setLoading(false);
         }
-      } catch (err) {
-        console.error("Error submitting email:", err);
-        setError("An error occurred. Please try again.");
-        setLoading(false);
-      }
-    },
-    [email, router]
-  );
 
-  const handleResend = useCallback(() => {
+        if (result.needsProfile) {
+          setStep("signup");
+        } else {
+          router.push(result.redirectTo || "/");
+        }
+      } else if (result.type === "magic-link-sent") {
+        setMagicLinkSent(true);
+        setResendDisabledSeconds(60);
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred. Please try again.");
+    }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDisplayNameTouched(true);
+
+    if (displayNameError || !displayName.trim()) {
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const result = await completeProfile.mutateAsync({ displayName });
+      router.push(result.redirectTo);
+    } catch (err: any) {
+      setError(err.message || "An error occurred. Please try again.");
+    }
+  };
+
+  const handleResend = () => {
     if (resendDisabledSeconds > 0) return;
     handleEmailSubmit();
-  }, [resendDisabledSeconds, handleEmailSubmit]);
+  };
 
-  const handleChangeEmail = useCallback(() => {
+  const handleChangeEmail = () => {
     setMagicLinkSent(false);
     setEmail("");
-  }, [resendDisabledSeconds]);
+    setEmailTouched(false);
+  };
+
+  const loading = authenticateEmail.isPending || completeProfile.isPending;
 
   return {
+    step,
     email,
+    displayName,
     loading,
     error,
     magicLinkSent,
     resendDisabledSeconds,
+    emailError,
+    displayNameError,
     setEmail,
+    setDisplayName,
     handleEmailSubmit,
+    handleSignupSubmit,
     handleResend,
     handleChangeEmail,
   };

@@ -6,16 +6,24 @@ import { createClient } from "@/lib/supabase/client";
 import AuthContainer from "@/components/auth/auth-container";
 import { Input } from "@/components/auth/input";
 import { Button } from "@/components/auth/button";
+import { trpc } from "@/lib/trpc/client";
 
 export default function CompleteProfilePage() {
   const [displayName, setDisplayName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [checkingName, setCheckingName] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
-  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>(undefined);
   const router = useRouter();
   const supabase = createClient();
+
+  // tRPC mutations
+  const completeProfile = trpc.auth.completeProfile.useMutation({
+    onSuccess: (data) => {
+      router.push(data.redirectTo);
+    },
+    onError: (err) => {
+      setError(err.message);
+    },
+  });
 
   // Get user email on mount
   useEffect(() => {
@@ -33,72 +41,26 @@ export default function CompleteProfilePage() {
     getUser();
   }, [router, supabase.auth]);
 
-  // Debounced display name availability check
-  useEffect(() => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(undefined);
+
     const trimmedName = displayName.trim();
-    if (!trimmedName || trimmedName.length === 0) {
-      setNameAvailable(null);
+    if (!trimmedName) {
+      setError("Display name is required");
       return;
     }
 
     if (trimmedName.length > 50) {
-      setNameAvailable(false);
       setError("Display name must be 50 characters or less");
       return;
     }
 
-    setError(undefined);
-    setCheckingName(true);
-
-    const timeout = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `/api/auth/check-display-name?name=${encodeURIComponent(trimmedName)}`
-        );
-        const data = await response.json();
-        setNameAvailable(data.available);
-        if (!data.available) {
-          setError(`The display name "${trimmedName}" is already taken`);
-        }
-      } catch (err) {
-        console.error("Error checking display name:", err);
-      } finally {
-        setCheckingName(false);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [displayName]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(undefined);
-
-    try {
-      const response = await fetch("/api/auth/complete-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: displayName.trim() }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.type === "success") {
-        // Redirect to destination
-        router.push(data.redirectTo);
-      } else {
-        setError(data.error || "Failed to create profile");
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error("Error completing profile:", err);
-      setError("An error occurred. Please try again.");
-      setLoading(false);
-    }
+    completeProfile.mutate({ displayName: trimmedName });
   };
 
-  const isValid = displayName.trim().length > 0 && nameAvailable === true;
+  const isValid = displayName.trim().length > 0 && displayName.trim().length <= 50;
+  const loading = completeProfile.isPending;
 
   return (
     <AuthContainer error={error} loading={loading}>
@@ -124,20 +86,13 @@ export default function CompleteProfilePage() {
           maxLength={50}
           disabled={loading}
           autoFocus
-          helperText={
-            checkingName
-              ? "Checking availability..."
-              : nameAvailable === true
-              ? "✓ Available"
-              : nameAvailable === false
-              ? undefined // Error shown above
-              : `${displayName.length}/50 characters`
-          }
+          error={error}
+          helperText={`${displayName.length}/50 characters`}
         />
 
         <Button
           type="submit"
-          disabled={loading || !isValid || checkingName}
+          disabled={loading || !isValid}
           loading={loading}
         >
           {loading ? "Creating Account..." : "Create Account"}

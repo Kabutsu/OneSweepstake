@@ -36,17 +36,16 @@ export default function EnterPageClient() {
         } = await supabase.auth.getUser();
 
         if (user) {
-          // User is authenticated - check if they need profile completion
-          const response = await fetch(
-            `/api/auth/user-exists?email=${encodeURIComponent(user.email || "")}`
-          );
-          const data = await response.json();
+          // User is authenticated - check if they have a profile in DB
+          const { data: dbUser } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', user.id)
+            .single();
 
-          if (data.exists) {
-            // Existing user - get redirect destination
-            const redirectResponse = await fetch("/api/auth/get-redirect");
-            const redirectData = await redirectResponse.json();
-            router.push(redirectData.destination || "/");
+          if (dbUser) {
+            // Existing user - redirect to home (getRedirect happens server-side)
+            router.push("/");
           } else {
             // New user - go to profile completion
             router.push("/auth/complete-profile");
@@ -58,7 +57,7 @@ export default function EnterPageClient() {
     }
 
     checkAuthFromHash();
-  }, [router, supabase.auth]);
+  }, [router, supabase]);
 
   return (
     <>
