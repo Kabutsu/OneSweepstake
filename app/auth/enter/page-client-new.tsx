@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-new";
 import AuthContainer from "@/components/auth/auth-container";
 import PasswordStep from "@/components/auth/password-step";
 import EmailStep from "@/components/auth/email-step";
 import SignupStep from "@/components/auth/signup-step";
 import ThemeToggle from "@/components/theme-toggle";
 
-export default function EnterPageClient() {
+export default function EnterPageNew() {
   const auth = useAuth();
 
   // Local state for form inputs
