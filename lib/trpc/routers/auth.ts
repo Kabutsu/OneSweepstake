@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { jwtVerify } from "jose";
+import { getBaseUrl } from "@/helpers/url";
 
 const JWT_SECRET = new TextEncoder().encode(env.auth.jwtSecret);
 
@@ -20,21 +21,6 @@ function createAdminClient() {
       persistSession: false,
     },
   });
-}
-
-/**
- * Get base URL for redirects
- */
-function getBaseUrl(req: Request): string {
-  // Prefer NEXT_PUBLIC_SITE_URL for production/preview deployments
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-  
-  // Fallback to host header for local development
-  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-  const host = req.headers.get("host") || "localhost:3000";
-  return `${protocol}://${host}`;
 }
 
 /**
@@ -177,7 +163,7 @@ export const authRouter = router({
       } else {
         // Magic link path
         const adminClient = createAdminClient();
-        const baseUrl = getBaseUrl(ctx.req);
+        const baseUrl = getBaseUrl();
 
         const { error } = await adminClient.auth.signInWithOtp({
           email: normalizedEmail,

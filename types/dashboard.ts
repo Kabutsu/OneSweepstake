@@ -1,8 +1,9 @@
 export type SweepstakeStatus = "active" | "upcoming" | "archived";
 
 export interface User {
-  name: string;
-  avatar: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  isAdmin: boolean;
 }
 
 export interface LiveMatch {

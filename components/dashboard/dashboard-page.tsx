@@ -10,9 +10,12 @@ import ActionButtons from "@/components/dashboard/action-buttons";
 import UpcomingState from "@/components/dashboard/upcoming-state";
 import type { User, Sweepstake } from "@/types/dashboard";
 
+type Props = {
+  user: User;
+}
+
 // Mock data - will be replaced with real data later
 const MOCK_DATA = {
-  user: { name: "Alex Morgan", avatar: "AM" } as User,
   sweepstakes: [
     {
       id: "1",
@@ -48,7 +51,7 @@ const MOCK_DATA = {
   },
 };
 
-export default function DashboardPage() {
+export default function DashboardPage({ user }: Props) {
   const [selectedSweepstake, setSelectedSweepstake] = useState(MOCK_DATA.sweepstakes[0]);
 
   // Placeholder action handlers
@@ -63,7 +66,7 @@ export default function DashboardPage() {
       mobileTitle={selectedSweepstake.name}
       sidebar={
         <Sidebar
-          user={MOCK_DATA.user}
+          user={user}
           sweepstakes={MOCK_DATA.sweepstakes}
           selectedSweepstake={selectedSweepstake}
           onSelectSweepstake={setSelectedSweepstake}
