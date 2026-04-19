@@ -86,7 +86,6 @@ export default function CompleteProfilePage() {
           maxLength={50}
           disabled={loading}
           autoFocus
-          error={error}
           helperText={`${displayName.length}/50 characters`}
         />
 

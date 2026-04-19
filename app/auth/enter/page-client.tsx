@@ -13,6 +13,7 @@ export default function EnterPageClient() {
   const supabase = createClient();
   
   const {
+    step,
     email,
     loading,
     error,
@@ -23,6 +24,13 @@ export default function EnterPageClient() {
     handleResend,
     handleChangeEmail,
   } = useAuth();
+
+  // Redirect to complete-profile when step changes to signup
+  useEffect(() => {
+    if (step === "signup") {
+      router.push("/auth/complete-profile");
+    }
+  }, [step, router]);
 
   // Handle case where user lands here with auth tokens in hash (from magic link)
   useEffect(() => {

@@ -73,7 +73,7 @@ export const authRouter = router({
    */
   checkEmail: publicProcedure
     .input(z.object({
-      email: z.email("Please enter a valid email address"),
+      email: z.email({ message: "Please enter a valid email address" }),
     }))
     .query(async ({ input }) => {
       const normalizedEmail = input.email.toLowerCase().trim();
@@ -93,7 +93,7 @@ export const authRouter = router({
    */
   authenticateEmail: publicProcedure
     .input(z.object({
-      email: z.email("Please enter a valid email address"),
+      email: z.email({ message: "Please enter a valid email address" }),
     }))
     .mutation(async ({ input, ctx }) => {
       const normalizedEmail = input.email.toLowerCase().trim();
@@ -200,8 +200,8 @@ export const authRouter = router({
   completeProfile: protectedProcedure
     .input(z.object({
       displayName: z.string()
-        .min(1, "Display name is required")
-        .max(50, "Display name must be 50 characters or less")
+        .min(1, { message: "Display name is required" })
+        .max(50, { message: "Display name must be 50 characters or less" })
         .trim(),
     }))
     .mutation(async ({ input, ctx }) => {
