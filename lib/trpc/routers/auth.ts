@@ -26,6 +26,12 @@ function createAdminClient() {
  * Get base URL for redirects
  */
 function getBaseUrl(req: Request): string {
+  // Prefer NEXT_PUBLIC_SITE_URL for production/preview deployments
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  // Fallback to host header for local development
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
   const host = req.headers.get("host") || "localhost:3000";
   return `${protocol}://${host}`;
