@@ -27,4 +27,19 @@ export const userRouter = router({
 
       return { user };
     }),
+
+  isUserAdmin: protectedProcedure
+    .input(z.object({
+      id: z.uuid(),
+    }))
+    .query(async ({ input }) => {
+      const user = await db
+        .select({ isAdmin: users.isAdmin })
+        .from(users)
+        .where(eq(users.id, input.id))
+        .limit(1)
+        .then((rows) => rows[0]);
+
+      return { isAdmin: !!user?.isAdmin };
+    }),
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import ThemeToggle from "@/components/theme-toggle";
 import LogoutButton from "@/components/logout-button";
 import SweepstakeListItem from "./sweepstake-list-item";
@@ -67,6 +68,20 @@ export default function Sidebar({
             </div>
           </div>
         </div>
+
+        {/* Admin Panel Button */}
+        {user.isAdmin && (
+          <div className="px-4 pt-4">
+            <Link
+              href="/admin"
+              onClick={onClose}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-purple hover:bg-purple-700 text-white font-semibold transition-colors shadow-md"
+            >
+              <span>⚙️</span>
+              <span>Admin Panel</span>
+            </Link>
+          </div>
+        )}
 
         {/* Sweepstakes List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">

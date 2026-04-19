@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../init";
+import { router, adminProcedure } from "../init";
 import { TRPCError } from "@trpc/server";
 import { db } from "@/db";
 import { tournaments } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { fetchCompetitionTeams } from "@/lib/football-data";
+import { fetchCompetitionTeams, fetchCompetition } from "@/lib/football-data";
 import type { SeedingConfig } from "@/types/admin";
 
 // Zod schema for tier config
@@ -29,7 +29,7 @@ export const adminRouter = router({
   /**
    * Get tournament seeding configuration
    */
-  getTournamentSeeding: protectedProcedure
+  getTournamentSeeding: adminProcedure
     .input(z.object({
       id: z.string(),
     }))
@@ -55,7 +55,7 @@ export const adminRouter = router({
   /**
    * Update tournament seeding configuration
    */
-  updateTournamentSeeding: protectedProcedure
+  updateTournamentSeeding: adminProcedure
     .input(z.object({
       id: z.string(),
       seedingConfig: seedingConfigSchema,
@@ -94,7 +94,7 @@ export const adminRouter = router({
   /**
    * Get teams for a tournament from Football-Data.org
    */
-  getTournamentTeams: protectedProcedure
+  getTournamentTeams: adminProcedure
     .input(z.object({
       id: z.string(),
     }))
@@ -124,6 +124,87 @@ export const adminRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message,
+        });
+      }
+    }),
+
+  /**
+   * List all tournaments
+   */
+  listTournaments: adminProcedure
+    .query(async () => {
+      const allTournaments = await db
+        .select()
+        .from(tournaments)
+        .orderBy(tournaments.startDate);
+
+      return { tournaments: allTournaments };
+    }),
+
+  /**
+   * Fetch competition data from Football-Data.org API
+   */
+  fetchCompetitionData: adminProcedure
+    .input(z.object({
+      competitionId: z.string().min(1),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const data = await fetchCompetition(input.competitionId);
+        return { 
+          competition: {
+            name: data.name || "",
+            emblem: data.emblem || "",
+            startDate: data.currentSeason?.startDate || null,
+            endDate: data.currentSeason?.endDate || null,
+          }
+        };
+      } catch (error) {
+        console.error("Error fetching competition:", error);
+        const message = error instanceof Error ? error.message : "Failed to fetch competition";
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message,
+        });
+      }
+    }),
+
+  /**
+   * Create a new tournament
+   */
+  createTournament: adminProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      slug: z.string().min(1),
+      apiId: z.string().min(1),
+      startDate: z.string().datetime(),
+      endDate: z.string().datetime(),
+      teamCount: z.number().int().positive(),
+      logo: z.string().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const [tournament] = await db
+          .insert(tournaments)
+          .values({
+            name: input.name,
+            slug: input.slug,
+            apiId: input.apiId,
+            startDate: new Date(input.startDate),
+            endDate: new Date(input.endDate),
+            teamCount: input.teamCount,
+            logo: input.logo || null,
+            isActive: true,
+            seedingConfig: null,
+          })
+          .returning();
+
+        return { tournament };
+      } catch (error) {
+        console.error("Error creating tournament:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create tournament",
         });
       }
     }),
