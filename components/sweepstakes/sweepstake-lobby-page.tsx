@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import { trpc } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
 import LoadingState from "@/components/loading-state";
@@ -125,12 +126,12 @@ export default function SweepstakeLobbyPage({ sweepstakeId, userId }: Sweepstake
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
-        <button
-          onClick={() => router.push("/sweepstakes")}
+        <Link
+          href="/sweepstakes"
           className="mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-2"
         >
           <span>←</span> Back to Browse
-        </button>
+        </Link>
 
         {/* Sweepstake Header */}
         <div className="mb-8">

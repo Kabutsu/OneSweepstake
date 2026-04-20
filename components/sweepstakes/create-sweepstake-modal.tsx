@@ -127,6 +127,7 @@ export default function CreateSweepstakeModal({
               value={maxParticipants}
               onChange={setMaxParticipants}
               min="2"
+              max={tournament.teamCount.toString()}
               required
               disabled={createMutation.isPending}
             />

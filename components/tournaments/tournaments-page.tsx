@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import { trpc } from "@/lib/trpc/client";
 import TournamentCard from "@/components/tournaments/tournament-card";
 import TournamentFilter from "@/components/tournaments/tournament-filter";
@@ -104,12 +105,12 @@ export default function TournamentsPage() {
           >
             Tournaments
           </button>
-          <button
-            onClick={() => router.push("/sweepstakes")}
+          <Link
+            href="/sweepstakes"
             className="pb-3 px-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold transition-colors"
           >
             Public Sweepstakes
-          </button>
+          </Link>
         </div>
 
         {/* Filter */}
