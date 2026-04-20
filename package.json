@@ -23,6 +23,7 @@
     "@trpc/next": "^11.16.0",
     "@trpc/react-query": "^11.16.0",
     "@trpc/server": "^11.16.0",
+    "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.2",
     "gsap": "^3.15.0",
     "jose": "^6.2.2",
