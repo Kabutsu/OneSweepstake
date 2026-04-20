@@ -38,11 +38,8 @@ export default function Sidebar({
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple to-magenta flex items-center justify-center shadow-md">
-                <span className="text-white font-display text-lg font-bold">OS</span>
-              </div>
-              <h1 className="text-xl font-display font-bold text-gray-900 dark:text-white">
+            <div className="flex items-start gap-3">
+              <h1 className="font-display text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple to-magenta">
                 OneSweepstake
               </h1>
             </div>
