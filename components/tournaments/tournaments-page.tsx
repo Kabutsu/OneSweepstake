@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import { trpc } from "@/lib/trpc/client";
 import TournamentCard from "@/components/tournaments/tournament-card";
 import TournamentFilter from "@/components/tournaments/tournament-filter";
+import CreateSweepstakeModal from "@/components/sweepstakes/create-sweepstake-modal";
 import LoadingState from "@/components/loading-state";
 import LogoutButton from "@/components/logout-button";
 import ThemeToggle from "@/components/theme-toggle";
@@ -14,6 +16,8 @@ import { getTournamentStatus } from "@/types/tournaments";
 export default function TournamentsPage() {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState<"all" | TournamentStatus>("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState<TournamentWithStatus | null>(null);
 
   const { data, isLoading, error } = trpc.tournaments.listTournaments.useQuery();
 
@@ -32,8 +36,22 @@ export default function TournamentsPage() {
   }, [tournamentsWithStatus, selectedFilter]);
 
   const handleCreateSweepstake = (tournamentId: string) => {
-    // TODO: Navigate to sweepstake creation page
-    console.log("Create sweepstake for tournament:", tournamentId);
+    const tournament = tournamentsWithStatus.find((t) => t.id === tournamentId);
+    if (tournament) {
+      setSelectedTournament(tournament);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedTournament(null);
+  };
+
+  const handleSweepstakeCreated = (sweepstakeId: string) => {
+    setIsModalOpen(false);
+    setSelectedTournament(null);
+    router.push(`/sweepstakes/${sweepstakeId}`);
   };
 
   if (isLoading) {
@@ -80,6 +98,21 @@ export default function TournamentsPage() {
           </p>
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="mb-8 flex gap-4 border-b border-gray-200 dark:border-gray-800">
+          <button
+            className="pb-3 px-1 text-transparent bg-clip-text bg-gradient-to-r from-purple to-magenta font-semibold border-b-2 border-purple"
+          >
+            Tournaments
+          </button>
+          <Link
+            href="/sweepstakes"
+            className="pb-3 px-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold transition-colors"
+          >
+            Public Sweepstakes
+          </Link>
+        </div>
+
         {/* Filter */}
         <div className="mb-8">
           <TournamentFilter selectedFilter={selectedFilter} onFilterChange={setSelectedFilter} />
@@ -104,6 +137,16 @@ export default function TournamentsPage() {
           </div>
         )}
       </main>
+
+      {/* Create Sweepstake Modal */}
+      {selectedTournament && (
+        <CreateSweepstakeModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          tournament={selectedTournament}
+          onSuccess={handleSweepstakeCreated}
+        />
+      )}
     </div>
   );
 }
