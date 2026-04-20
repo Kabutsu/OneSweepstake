@@ -2,6 +2,7 @@ import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
 import { jwtVerify } from "jose";
+import { COOKIE_NAMES } from "../auth/cookies";
 
 const JWT_SECRET = new TextEncoder().encode(env.auth.jwtSecret);
 
@@ -45,7 +46,7 @@ export async function createContext(opts: FetchCreateContextFnOptions) {
     })
   );
   
-  const passwordCookie = cookies["site_password_verified"];
+  const passwordCookie = cookies[COOKIE_NAMES.PASSWORD_VERIFIED];
   if (passwordCookie) {
     try {
       const { payload } = await jwtVerify(passwordCookie, JWT_SECRET);

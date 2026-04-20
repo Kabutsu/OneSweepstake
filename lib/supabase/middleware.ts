@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { jwtVerify, SignJWT } from "jose";
+import { COOKIE_NAMES } from "../auth/cookies";
 
 const JWT_SECRET = new TextEncoder().encode(env.auth.jwtSecret);
 
@@ -103,7 +104,7 @@ export async function updateSession(request: NextRequest) {
     const response = NextResponse.redirect(redirectUrl);
     
     const passwordToken = await createPasswordToken();
-    response.cookies.set("site_password_verified", passwordToken, {
+    response.cookies.set(COOKIE_NAMES.PASSWORD_VERIFIED, passwordToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -142,7 +143,7 @@ export async function updateSession(request: NextRequest) {
   // Store original destination if valid
   if (shouldStoreRedirect(pathname)) {
     const redirectToken = await createRedirectToken(pathname);
-    response.cookies.set("redirect_destination", redirectToken, {
+    response.cookies.set(COOKIE_NAMES.REDIRECT_DESTINATION, redirectToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
